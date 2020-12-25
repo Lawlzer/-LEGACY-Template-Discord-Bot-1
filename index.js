@@ -1,8 +1,4 @@
-//Invite Link for the bot: https://discordapp.com/oauth2/authorize?client_id=324404362845749260&scope=bot
-//
-
-// const thing = require('./lib/database'); 
-// console.log(thing); 
+//Invite Link for the bot: https://discordapp.com/oauth2/authorize?client_id=584171613671522304&scope=bot
 
 console.log('The bot is in index.js');
 
@@ -30,7 +26,9 @@ mongoose.connection.on('error', (err) => {
 const bot = new Discord.Client();
 var messageLawlzer; 
 
-bot.on('ready', () => { //When our bot is ready:
+bot.on('ready', () => { // When our bot is ready:
+  bot.user.setActivity("with myself");
+  // https://discord.js.org/#/docs/main/stable/class/ClientUser?scrollTo=setActivity
   // bot.user.setActivity('YouTube', { type: 'WATCHING' })
   // .then(presence => console.log(`Activity set to ${presence.game ? presence.game.name : 'none'}`))
   // .catch(console.error);
@@ -39,7 +37,7 @@ bot.on('ready', () => { //When our bot is ready:
   bot.fetchUser('206980947298615297', false).then((user) => {
     messageLawlzer = user; 
   });
-  bot.user.setActivity("with myself");
+  
 });
 
 bot.on('message', async message => {
@@ -138,23 +136,6 @@ const token = process.env.DISCORD_BOT_SECRET;
 bot.login(token);
 
 
-
-
-
-
-/*
- * WHEN NEW BOT IS CREATED, FIX/CHANGE/LOOK AT THESE THINGS:
- * Set presence
- * ./env --> change DISCORD_BOT_SECRET
- * ./env --> change the MONGODB_URI after the / before the ? 
- * ./lib/database.js --> change all thumbnails and footers
- * Change the client ID at index.js --> top
- */
-
-
-
-//change the key stuff! remove commands/index
-//secret voting
 
 function convertKeysToLowerCase(obj) {
   //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/getOwnPropertyNames
