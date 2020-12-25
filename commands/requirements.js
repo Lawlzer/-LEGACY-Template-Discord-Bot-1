@@ -1,3 +1,6 @@
+// This file holds all of the "requirements" that are referenced from anything in /commands
+// They will return "true" if the requirement is met, or "false" if the requirement is not passed, then the command will not run.
+
 const databaseController = require('../lib/database');
 
 exports.admin = async function (bot, message, argsLowercase, content) {

@@ -1,3 +1,7 @@
+// This is an example file, that has everything already working and necessary for yout o create your own, custom files/database names
+// and things like that. If you want to create multiple command files with different names, you can ctrl + F "example" from every
+// file, and basically copy and paste whatever you see there, and add your new names and whatever you need to.
+
 const requirements = require('./requirements');
 const exampleController = require('../lib/example');
 
