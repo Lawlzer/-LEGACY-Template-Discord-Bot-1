@@ -17,6 +17,7 @@ const devUserId = '206980947298615297';
 
 const commands = require('./commands/allCommands');
 const databaseController = require('./lib/database');
+const exampleController = require('./lib/example');
 const mongoose = require('mongoose');
 const Discord = require('discord.js');
 
@@ -132,7 +133,7 @@ bot.on('message', async message => {
 
 
 
-    if (await findUserCommand(database, commandName, bot, message) == true) {
+    if (await exampleController.findUserCommand(bot, message, database, commandName) == true) {
       // this command will return "true" if it finds a user created command and will then send the message to the channel
       // look at /commands/example.js to see the command setup, and /lib/example.js for the command itself
       return; 
@@ -219,14 +220,3 @@ function convertKeysToLowerCase(obj) {
   }
   return output;
 };
-
-async function findUserCommand(database, inputCommand, bot, message) {
-  var allCommands = database.userCreatedCommands; 
-  for (let i = 0; i < allCommands.length; i++) {
-    if (inputCommand == allCommands[i].commandTrigger) {
-      await databaseController.sendEmbed(bot, message, allCommands[i].commandTrigger, allCommands[i].commandDescription);
-      return true; 
-    }
-  }
-  return false; // return false so we don't do anything when returning this function
-} 
