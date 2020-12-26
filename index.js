@@ -53,8 +53,35 @@ bot.on('ready', () => { // When our bot is ready:
     }
     messageDeveloper = user; 
   });  
-  
 });
+
+bot.on('messageReactionAdd', async (reaction, user) => {
+  if (user.bot) { return; }
+  // we need to make sure the reaction isn't from the bot 
+  const nerdDumpEmojiId = await databaseController.returnNerdDumpEmojiId();
+  if (reaction.emoji.id != nerdDumpEmojiId) {
+    // we need the correct reaction
+    return;
+  }
+  var allObjects = await databaseController.returnNerdDumpInfo();
+
+  var correctObject = null; 
+  for (let i = 0; i < allObjects.length; i++) {
+    if (allObjects[i].id == reaction.message.id) { // this is the correct element, we found it, now we have to do stuff with this
+      correctObject = allObjects[i];
+    }
+  }
+  if (!correctObject) { return; } // somebody probably reacted to a non-bot message with your custom emoji // or they reacted after the thing was deleted from our saved array
+  
+  var embed = correctObject.basicEmbed; 
+  embed.setFooter(
+    'NERD DUMP ACTIVATED!' +
+    '\nDiscord --> Bot response time: ' + (correctObject.botTime - correctObject.initialMessageTime) +'ms.' + 
+    '\nBot --> Discord response time: ' + (correctObject.secondMessageTime - correctObject.botTime) + 'ms.' +
+    '\nTotal response time: ' + (correctObject.secondMessageTime - correctObject.initialMessageTime) + 'ms.'  
+    );
+  reaction.message.edit(embed)
+})
 
 bot.on('message', async message => {
   if (message.author.bot) {
@@ -159,11 +186,11 @@ bot.on('message', async message => {
       }
     } catch (e) {
       // if there's an error, this will return a message to the user, and if it's production (production = true), it'll even message you in DMs! (if you're in the server)
-      message.channel.send(await databaseController.returnErrorEmbed(bot, message, 'ERROR', 'You should never see this... Uhhh.. Sorry. To sate your curiousity, here\'s the error.\n' + e.message));
+      await databaseController.sendErrorEmbed(bot, message, 'ERROR', 'You should never see this... Uhhh.. Sorry. To sate your curiousity, here\'s the error.\n' + e.message);
       if (production) {
         console.log('Error found in production code... That\'s not good.\n' + e.message);
         if (messageDeveloper) { // if you have a popular bot, you might not be in the same server as the bot, then this would throw a massive error, because it can't find your user, based on your ID.
-        messageDeveloper.send(await databaseController.returnErrorEmbed(bot, message, 'ERROR', 'Error found in production code... That\'s not good.\n' + e.message)); 
+          await databaseController.sendErrorEmbed(bot, message, 'ERROR', 'Error found in production code... That\'s not good.\n' + e.message); 
         }
       }
       // if we have any 
@@ -197,7 +224,7 @@ async function findUserCommand(database, inputCommand, bot, message) {
   var allCommands = database.userCreatedCommands; 
   for (let i = 0; i < allCommands.length; i++) {
     if (inputCommand == allCommands[i].commandTrigger) {
-      await message.channel.send(await databaseController.returnEmbed(bot, message, allCommands[i].commandTrigger, allCommands[i].commandDescription));
+      await databaseController.sendEmbed(bot, message, allCommands[i].commandTrigger, allCommands[i].commandDescription);
       return true; 
     }
   }
