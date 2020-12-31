@@ -58,45 +58,18 @@ bot.on('ready', () => { // When our bot is ready:
 
 bot.on('messageReactionAdd', async (reaction, user) => {
   if (user.bot) { return; }
+
+  if (productionCheck(reaction.message)) { // if we don't want to run a section of the bot, this stops it from running
+    return; 
+  }
+
   // we need to make sure the reaction isn't from the bot 
   const nerdDumpEmojiId = await databaseController.returnNerdDumpEmojiId();
   if (reaction.emoji.id != nerdDumpEmojiId) {
     // we need the correct reaction
     return;
   }
-  var allObjects = await databaseController.returnNerdDumpInfo();
-
-  var correctObject = null; 
-  for (let i = 0; i < allObjects.length; i++) {
-    if (allObjects[i].id == reaction.message.id) { // this is the correct element, we found it, now we have to do stuff with this
-      correctObject = allObjects[i];
-    }
-  }
-
-  if (!correctObject) { 
-    // somebody probably reacted to a non-bot message with your custom emoji 
-    // or they reacted after the thing was deleted from our saved array
-    if (reaction.message.editable) { // they reacted to a message by the bot, BUT they waited too long, OR the bot was restarted inbetween them running the command and trying to react.
-      var embed = reaction.message.embeds[0] // we can't use the correctObject.basicEmbed, as that doesn't exist.. because we couldn't find the correctObject
-      console.log(reaction.message.embeds[0].footer);   
-      // embed.setFooter();
-      console.log(embed); 
-      reaction.message.edit('Nerd Dump Error: The nerd dumped too late. The nerd needs to dump within ' + await databaseController.returnNerdDumpTimeOut() + ' seconds.'); 
-      return; // technically useless return.. but it looks better, and signifies that there *could* be lower code
-    }
-    // they reacted to a message that isn't by the bot.... no response is needed
-    return; 
-  } 
-
-  const currentTime = Date.now(); 
-
-  var embed = correctObject.basicEmbed; 
-  embed.setFooter(
-    'NERD DUMP ACTIVATED!' +
-    '\nDiscord message sent --> Discord message reacted to time: ' + (correctObject.discordSecondMessageTime - correctObject.discordInitialMessageTime) + 'ms.' +
-    '\nBot message recieved --> Bot message sent (total time for the bot to handle the message)' + (correctObject.initialMessageStarted - correctObject.initialMessageSent) + 'ms.'
-    );
-  reaction.message.edit(embed)
+  await doNerdDump(reaction); 
 })
 
 bot.on('message', async message => {
@@ -110,13 +83,7 @@ bot.on('message', async message => {
   } // lots of commands don't work if you message the bot in DMs, so it's just disabled overall
     // all of the databases, by default, are created based on the server ID (aka guild ID) - so there aren't any databases in DMs
 
-  if (message.guild.id == devTestingGuildId && production) {
-    console.log('In dev testing server, but production is enabled. Message ignored.'); 
-    return; 
-  }
-
-  if (message.guild.id != devTestingGuildId && !production) {
-    console.log('In dev testing server, but this is the production bot. Message ignored.')
+  if (productionCheck(message)) { // if we don't want to run a section of the bot, this stops it from running
     return; 
   }
 
@@ -236,3 +203,51 @@ function convertKeysToLowerCase(obj) {
   }
   return output;
 };
+
+function productionCheck(message) {
+  if (message.guild.id == devTestingGuildId && production) {
+    console.log('In dev testing server, but production is enabled. Message ignored.'); 
+    return; 
+  }
+
+  if (message.guild.id != devTestingGuildId && !production) {
+    console.log('In dev testing server, but this is the production bot. Message ignored.')
+    return; 
+  }
+}
+
+async function doNerdDump(reaction) {
+  var allObjects = await databaseController.returnNerdDumpInfo();
+
+  var correctObject = null; 
+  for (let i = 0; i < allObjects.length; i++) {
+    if (allObjects[i].id == reaction.message.id) { // this is the correct element, we found it, now we have to do stuff with this
+      correctObject = allObjects[i];
+    }
+  }
+
+  if (!correctObject) { 
+    // somebody probably reacted to a non-bot message with your custom emoji 
+    // or they reacted after the thing was deleted from our saved array
+    if (reaction.message.editable) { // they reacted to a message by the bot, BUT they waited too long, OR the bot was restarted inbetween them running the command and trying to react.
+      var embed = reaction.message.embeds[0] // we can't use the correctObject.basicEmbed, as that doesn't exist.. because we couldn't find the correctObject
+      console.log(reaction.message.embeds[0].footer);   
+      // embed.setFooter();
+      console.log(embed); 
+      reaction.message.edit('Nerd Dump Error: The nerd dumped too late. The nerd needs to dump within ' + await databaseController.returnNerdDumpTimeOut() + ' seconds.'); 
+      return; // technically useless return.. but it looks better, and signifies that there *could* be lower code
+    }
+    // they reacted to a message that isn't by the bot.... no response is needed
+    return; 
+  } 
+
+  const currentTime = Date.now(); 
+
+  var embed = correctObject.basicEmbed; 
+  embed.setFooter(
+    'NERD DUMP ACTIVATED!' +
+    '\nDiscord message sent --> Discord message reacted to time: ' + (correctObject.discordSecondMessageTime - correctObject.discordInitialMessageTime) + 'ms.' +
+    '\nBot message recieved --> Bot message sent (total time for the bot to handle the message)' + (correctObject.initialMessageSent - correctObject.initialMessageStarted) + 'ms.'
+    );
+  reaction.message.edit(embed)
+}
