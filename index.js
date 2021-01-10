@@ -10,9 +10,9 @@
 
 console.log('The bot is in index.js');
 
-const production = false; // set to true if it's the "production" version of your bot
+const production = true; // set to true if it's the "production" version of your bot
 const devTestingGuildId = '547192605927145481'; // set to the id of your TESTING server. This IS important.
-const devUserId = '206980947298615297'; 
+const devUserId = '206980947298615297';
 // should be the GUILD id, not the CHANNEL id.
 
 const commands = require('./commands/allCommands');
@@ -36,7 +36,7 @@ mongoose.connection.on('error', (err) => {
 });
 
 const bot = new Discord.Client();
-var messageDeveloper; 
+var messageDeveloper;
 
 bot.on('ready', () => { // When our bot is ready:
   bot.user.setActivity("with myself");
@@ -45,31 +45,40 @@ bot.on('ready', () => { // When our bot is ready:
   // .then(presence => console.log(`Activity set to ${presence.game ? presence.game.name : 'none'}`))
   // .catch(console.error);
   console.log('Bot running.');
-  
+
   // If you're not me (hi!), you'll probably want to either delete this, or leave it, if you want messages when something goes wrong.
-  bot.fetchUser(devUserId, false).then((user) => { 
+  bot.fetchUser(devUserId, false).then((user) => {
     if (!user) {
       console.log('The user could not be found. Are you sure you\'re in the same server as the bot?'); // possibly not needed text, depending on how mass scale your bot is.
-      return; 
+      return;
     }
-    messageDeveloper = user; 
-  });  
+    messageDeveloper = user;
+  });
 });
 
 bot.on('messageReactionAdd', async (reaction, user) => {
-  if (user.bot) { return; }
+
+  if (user.bot) { return; } // if the author of the reaction is a bot, ignore it (probably this bot)
 
   if (productionCheck(reaction.message)) { // if we don't want to run a section of the bot, this stops it from running
-    return; 
+    return;
+  }
+  // Polling code
+  if (reaction.message) {
+    console.log(reaction.message.embeds[0].title);
+    if (reaction.message.embeds[0].title.toLowerCase() == 'poll') {
+      await pollReactRecieved(reaction, user);
+    }
   }
 
-  // we need to make sure the reaction isn't from the bot 
+  // nerdDump code
+  // we need to make sure the reaction is the right reaction 
   const nerdDumpEmojiId = await databaseController.returnNerdDumpEmojiId();
   if (reaction.emoji.id != nerdDumpEmojiId) {
     // we need the correct reaction
     return;
   }
-  await doNerdDump(reaction); 
+  await doNerdDump(reaction);
 })
 
 bot.on('message', async message => {
@@ -81,10 +90,10 @@ bot.on('message', async message => {
     message.reply('Please do not message this bot in DMs. Please do !help in a public channel, or add Lawlzer on Discord for help. Lawlzer#4013')
     return;
   } // lots of commands don't work if you message the bot in DMs, so it's just disabled overall
-    // all of the databases, by default, are created based on the server ID (aka guild ID) - so there aren't any databases in DMs
+  // all of the databases, by default, are created based on the server ID (aka guild ID) - so there aren't any databases in DMs
 
   if (productionCheck(message)) { // if we don't want to run a section of the bot, this stops it from running
-    return; 
+    return;
   }
 
   // this handles the command itself, and handles all of the stuff for running the command itself
@@ -114,20 +123,21 @@ bot.on('message', async message => {
     argsLowercase = argsLowercase.split(' ');
     // sets up the argsLowercase (removes prefix, makes everything lowercase, removes the commandName, so everything we have left are the arguments)
 
+    if (argsLowercase[0] == '') { argsLowercase.shift(); } // if the 0th array in the array is empty, this removes it.
 
 
     if (await exampleController.findUserCommand(bot, message, database, commandName) == true) {
       // this command will return "true" if it finds a user created command and will then send the message to the channel
       // look at /commands/example.js to see the command setup, and /lib/example.js for the command itself
-      return; 
+      return;
     }
 
-// this is kind of jank, I'll be honest.
-// The names of everything in /commands/database.js are all capitalized (uppercase and stuff), but the problem is, we want commands to
-// be case insensitive.. But we still want the names capitalized (or camelCase, or whatever) when the user runs !help
-// And *I couldn't figure out a way* to make the names of everything in /commands/database.js capitalized there, but lowercase here...
+    // this is kind of jank, I'll be honest.
+    // The names of everything in /commands/database.js are all capitalized (uppercase and stuff), but the problem is, we want commands to
+    // be case insensitive.. But we still want the names capitalized (or camelCase, or whatever) when the user runs !help
+    // And *I couldn't figure out a way* to make the names of everything in /commands/database.js capitalized there, but lowercase here...
 
-// so, we get just the NAMES of every object there
+    // so, we get just the NAMES of every object there
     var commandNames = Object.keys(convertKeysToLowerCase(commands)); // get all the names in lowercase, so we can search them
 
     // and we make sure this is a command that's included there (this is lowercase!) 
@@ -149,7 +159,7 @@ bot.on('message', async message => {
     if (!!command.requirements) { // this deals with command requirements, and makes sure all of the command requirements are true
       for (let i = 0; i <= command.requirements.length - 1; i++) {
         if (!await command.requirements[i](bot, message, argsLowercase, content)) {
-          console.log('The requirement: "' + commandName + '" has failed');
+          console.log('The command ' + commandName + ' has failed due to a requirement.');
           return;
         }
       }
@@ -160,10 +170,10 @@ bot.on('message', async message => {
       content = content.replace(commandPrefix, '');
       content = content.replace(commandName, '');
 
-      if (argsLowercase[0] == '') { argsLowercase.shift(); } // if the 0th array in the array is empty, this removes it.
+      if (content[0] == ' ') { content = content.substring(1); } // if the 0th character is a space, remove it. 
       // it happens a lot (or atleast used to), and this was my quick-fix. Probably should check this again in the future.
-      
-      var result = await command.execute(bot, message, argsLowercase, content); 
+
+      var result = await command.execute(bot, message, argsLowercase, content);
 
       if (!!result && result.hasOwnProperty('then') && typeof result.then === 'function') {
         result = await result;
@@ -174,7 +184,7 @@ bot.on('message', async message => {
       if (production) {
         console.log('Error found in production code... That\'s not good.\n' + e.message);
         if (messageDeveloper) { // if you have a popular bot, you might not be in the same server as the bot, then this would throw a massive error, because it can't find your user, based on your ID.
-          await databaseController.sendErrorEmbed(bot, message, 'ERROR', 'Error found in production code... That\'s not good.\n' + e.message); 
+          await databaseController.sendErrorEmbed(bot, message, 'ERROR', 'Error found in production code... That\'s not good.\n' + e.message);
         }
       }
       // if we have any 
@@ -206,48 +216,78 @@ function convertKeysToLowerCase(obj) {
 
 function productionCheck(message) {
   if (message.guild.id == devTestingGuildId && production) {
-    console.log('In dev testing server, but production is enabled. Message ignored.'); 
-    return; 
+    console.log('In dev testing server, but production is enabled. Message ignored.');
+    return;
   }
 
   if (message.guild.id != devTestingGuildId && !production) {
     console.log('In dev testing server, but this is the production bot. Message ignored.')
-    return; 
+    return;
   }
 }
 
 async function doNerdDump(reaction) {
   var allObjects = await databaseController.returnNerdDumpInfo();
 
-  var correctObject = null; 
+  var correctObject = null;
   for (let i = 0; i < allObjects.length; i++) {
     if (allObjects[i].id == reaction.message.id) { // this is the correct element, we found it, now we have to do stuff with this
       correctObject = allObjects[i];
     }
   }
 
-  if (!correctObject) { 
+  if (!correctObject) {
     // somebody probably reacted to a non-bot message with your custom emoji 
     // or they reacted after the thing was deleted from our saved array
     if (reaction.message.editable) { // they reacted to a message by the bot, BUT they waited too long, OR the bot was restarted inbetween them running the command and trying to react.
       var embed = reaction.message.embeds[0] // we can't use the correctObject.basicEmbed, as that doesn't exist.. because we couldn't find the correctObject
-      console.log(reaction.message.embeds[0].footer);   
+      console.log(reaction.message.embeds[0].footer);
       // embed.setFooter();
-      console.log(embed); 
-      reaction.message.edit('Nerd Dump Error: The nerd dumped too late. The nerd needs to dump within ' + await databaseController.returnNerdDumpTimeOut() + ' seconds.'); 
+      console.log(embed);
+      reaction.message.edit('Nerd Dump Error: The nerd dumped too late. The nerd needs to dump within ' + await databaseController.returnNerdDumpTimeOut() + ' seconds.');
       return; // technically useless return.. but it looks better, and signifies that there *could* be lower code
     }
     // they reacted to a message that isn't by the bot.... no response is needed
-    return; 
-  } 
+    return;
+  }
 
-  const currentTime = Date.now(); 
+  const currentTime = Date.now();
 
-  var embed = correctObject.basicEmbed; 
+  var embed = correctObject.basicEmbed;
   embed.setFooter(
     'NERD DUMP ACTIVATED!' +
     '\nDiscord message sent --> Discord message reacted to time: ' + (correctObject.discordSecondMessageTime - correctObject.discordInitialMessageTime) + 'ms.' +
-    '\nBot message recieved --> Bot message sent (total time for the bot to handle the message)' + (correctObject.initialMessageSent - correctObject.initialMessageStarted) + 'ms.'
-    );
+    '\nBot message recieved --> Bot message sent (total time for the bot to handle the message) ' + (correctObject.initialMessageSent - correctObject.initialMessageStarted) + 'ms.'
+  );
   reaction.message.edit(embed)
+}
+
+async function pollReactRecieved(reaction, user) {
+  if (reaction.count == 1) { // we only want to do stuff if nobody else has reacted with it
+    var database = await databaseController.getOrCreateDatabase(reaction.message.guild.id);
+    var allPolls = database.polls;
+    console.log(reaction.message.embeds[0].description);
+    console.log('\n\n\n');
+    for (let i = 0; i < allPolls.length; i++) {
+
+      var currentPoll = allPolls[i];
+      if (reaction.message.embeds[0].description == currentPoll.messageContent) {
+        // find the message where the description is the same as any stored in the DB
+        if (currentPoll.authorId == user.id) {
+          // make sure the author of the poll and author of the reaction are the same
+
+          const messageReactionEmojiName = reaction.emoji.name; // we need the name of the emoji to react w/ it, and to remove it
+          reaction.message.react(messageReactionEmojiName); // React *FIRST*, otherwise it looks bad in-Discord due to delays
+          reaction.message.reactions.get(messageReactionEmojiName).remove(user);
+          // ^^ get the message reactions, get the right reaction name, then remove its reacts by the user
+          
+          return;
+        }
+        console.log('Correct message found, but incorrect author');
+
+      }
+    }
+
+
+  }
 }

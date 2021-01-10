@@ -10,16 +10,20 @@ exports.admin = async function (bot, message, argsLowercase, content) {
     return;
   }
 
+// !TODO remove caching of roles
+
   if (message.member.roles.some(role => role.id == database.adminRoleId)) {
+    console.log(database.adminRoleId); 
     return true;
   }
+
   await databaseController.sendErrorEmbed(bot, message, 'ERROR', 'You must be an admin to run this command.');
   return false;
 }
 
 exports.oneArgument = async function (bot, message, argsLowercase, content) {
   if (argsLowercase.length < 1) {
-    databaseController.sendErrorEmbed(message, bot, 'ERROR', 'You must provide at least one argument to use this command. Example: ' + command.example);
+    databaseController.sendErrorEmbed(bot, message, 'ERROR', 'You must provide at least one argument to use this command. Use the help command to get help on this command.');
     return false;
   }
   return true;
@@ -27,7 +31,7 @@ exports.oneArgument = async function (bot, message, argsLowercase, content) {
 
 exports.twoArguments = async function (bot, message, argsLowercase, content) {
   if (argsLowercase.length < 2) {
-    await databaseController.sendErrorEmbed(message, bot, 'ERROR', 'You must provide at least two arguments to use this command. Example: ' + command.example);
+    await databaseController.sendErrorEmbed(bot, message, 'ERROR', 'You must provide at least two arguments to use this command. Use the help command to get help on this command.');
     return false;
   }
   return true;

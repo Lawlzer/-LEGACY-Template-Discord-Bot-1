@@ -10,11 +10,13 @@ const databaseSchema = new mongoose.Schema({
   chatLogId: { type: String },
   commandPrefix: { type: 'String', required: true },
 
-  userCreatedCommands: [{ type: 'Object'}],
-//   newCommand = {
-//     commandTrigger: commandTrigger,
-//     commandDesciption: commandDescription,
-//  }
+  userCreatedCommands: [{ type: 'Object' }],
+  //   newCommand = {
+  //     commandTrigger: commandTrigger,
+  //     commandDesciption: commandDescription,
+  //  }
+  nerdDumps: [{ type: 'Object' }],
+  polls: [{ type: 'Object' }],
 
 }, { timestamps: true });
 

@@ -4,20 +4,20 @@
 const requirements = require('./requirements');
 const databaseController = require('../lib/database');
 
-exports.Help = { 
+exports.Help = {
   // The *name* of the command will show up when you run the help  command- so you will want it to be capitalized.
 
-  blurb: '<commandPrefix>help.', 
+  blurb: '<commandPrefix>help.',
   // Blurb is what shows up in the basic help command.
 
-  help: '!help !help !help !help wait... that isn\'t how this works? ', 
+  help: '!help !help !help !help wait... that isn\'t how this works? ',
   // If you do !help <specificCommand>, then this "help" will appear.
   // the "blurb" may be removed in the future version, and simply replaced with this "help"
 
-  example: '<commandPrefix>help || <commandPrefix>help ping', 
+  example: '<commandPrefix>help || <commandPrefix>help ping',
   // <commandPrefix> will be replaced with the user-set command prefix (by default, !)
   // When you run !help <specificCommand>, this example will show up, and may help the user if they have any questions about this command
-  
+
   requirements: [],
   // This is an array of any requirements this command may have. For example, `requirements.admin` will check if the user has admin.
   // If the user does not have access to that command, it'll return an error embed (/lib/database.js), and will stop the command.
